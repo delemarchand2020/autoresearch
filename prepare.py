@@ -27,9 +27,9 @@ import torch
 # Constants (fixed, do not modify)
 # ---------------------------------------------------------------------------
 
-MAX_SEQ_LEN = 2048       # context length
+MAX_SEQ_LEN = 256        # context length
 TIME_BUDGET = 300        # training time budget in seconds (5 minutes)
-EVAL_TOKENS = 40 * 524288  # number of tokens for val eval
+EVAL_TOKENS = 5 * 524288   # number of tokens for val eval
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -294,8 +294,8 @@ def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
         doc_buffer.extend(token_lists)
 
     # Pre-allocate buffers: [inputs (B*T) | targets (B*T)]
-    row_buffer = torch.empty((B, row_capacity), dtype=torch.long)
-    cpu_buffer = torch.empty(2 * B * T, dtype=torch.long, pin_memory=True)
+    row_buffer = torch.empty((B, row_capacity), dtype=torch.long, device="cpu")
+    cpu_buffer = torch.empty(2 * B * T, dtype=torch.long, device="cpu", pin_memory=True)
     gpu_buffer = torch.empty(2 * B * T, dtype=torch.long, device="cuda")
     cpu_inputs = cpu_buffer[:B * T].view(B, T)
     cpu_targets = cpu_buffer[B * T:].view(B, T)
@@ -322,13 +322,13 @@ def make_dataloader(tokenizer, B, T, split, buffer_size=1000):
 
                 if best_idx >= 0:
                     doc = doc_buffer.pop(best_idx)
-                    row_buffer[row_idx, pos:pos + len(doc)] = torch.tensor(doc, dtype=torch.long)
+                    row_buffer[row_idx, pos:pos + len(doc)] = torch.tensor(doc, dtype=torch.long, device="cpu")
                     pos += len(doc)
                 else:
                     # No doc fits — crop shortest to fill remaining
                     shortest_idx = min(range(len(doc_buffer)), key=lambda i: len(doc_buffer[i]))
                     doc = doc_buffer.pop(shortest_idx)
-                    row_buffer[row_idx, pos:pos + remaining] = torch.tensor(doc[:remaining], dtype=torch.long)
+                    row_buffer[row_idx, pos:pos + remaining] = torch.tensor(doc[:remaining], dtype=torch.long, device="cpu")
                     pos += remaining
 
         cpu_inputs.copy_(row_buffer[:, :-1])
