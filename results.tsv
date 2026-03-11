@@ -1,0 +1,6 @@
+commit	val_bpb	memory_gb	status	description
+8ec02da	3.231273	3.1	keep	baseline
+b165058	3.232836	2.9	discard	Exp 1: gelu + lr/wd tuning
+0942be6	3.193618	4.5	keep	Exp 2: depth 4 -> 6
+c926ce4	3.004714	6.4	discard	Exp 3: depth 6 -> 8 (VRAM OOM)
+9a3ebfb	3.189784	4.5	keep	Exp 4: lr 0.06, wd 0.1, warmdown 0.6
